@@ -1,31 +1,38 @@
 //create web server
 const express = require('express');
 const app = express();
-const bodyParser = require('body-parser');
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-//define the port
 const port = 3000;
+const path = require('path');
+const fs = require('fs');
+const bodyParser = require('body-parser');
+const comments = require('./comments.json');
 
-//define the comments
-let comments = [
-    { id: 1, author: 'John', text: 'Hello World' },
-    { id: 2, author: 'Jane', text: 'Hi, How are you?' }
-];
+app.use(express.static('public'));
+app.use(bodyParser.urlencoded({ extended: false }));
 
-//define the routes
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 app.get('/comments', (req, res) => {
-    res.json(comments);
+  res.json(comments);
 });
 
 app.post('/comments', (req, res) => {
-    const comment = req.body;
-    comments.push(comment);
-    res.json(comment);
+  const newComment = {
+    id: comments.length + 1,
+    username: req.body.username,
+    comment: req.body.comment,
+  };
+  comments.push(newComment);
+  fs.writeFile('./comments.json', JSON.stringify(comments), (err) => {
+    if (err) {
+      res.status(500).send('Server error');
+    }
+    res.json(newComment);
+  });
 });
 
-//start the server
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on http://localhost:${port}`);
 });
